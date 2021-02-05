@@ -1,6 +1,6 @@
-import React, { useEffect, useState }  from 'react';
+import React, { useCallback, useEffect, useState }  from 'react';
 import './App.css';
-import { Provider, useSelector } from 'react-redux';
+import { Provider, useDispatch, useSelector } from 'react-redux';
 import { createStore, Store, Reducer } from 'redux';
 
 const App: React.FC = () => {
@@ -13,41 +13,49 @@ const App: React.FC = () => {
   );
 };
 
+let RENDER_COUNT = 0;
 const MyContent: React.FC = () => {
-  const [x, setX] = useState<number>(41);
-  const r = useX(x);
-  useEffect(() => {
-    console.log("setting x = ", r);
-    setX(r.value + 1);
-  }, [r]);
-  return <p>{x}</p>;
+  const store = useSelector((store) => store);
+  const dispatch = useDispatch();
+  const [, kick] = useState<{}>({});
+  const r = useX();
+  useEffect(() => kick({}), [r]);
+  return <div>
+    <p>{++RENDER_COUNT} renders</p>
+    <p>Store: {JSON.stringify(store)}</p>
+    <button onClick={() => dispatch({type: 'increment'})}>Increment</button>
+  </div>;
 };
 
 interface Box<T> {
   readonly value: T;
 }
 interface MyStore {
-  readonly count: Box<number>;
+  readonly count: number;
 }
-interface Noop {
-  readonly type: 'noop';
+interface Increment {
+  readonly type: 'increment';
 }
-type MyAction = Noop;
+type MyAction = Increment;
 const myReducer: Reducer<MyStore, MyAction> = (state, action) => {
   switch (action.type) {
+    case 'increment':
+      return {...state, count: (state?.count || 0) + 1}
     default:
-      return state || {count: {value: 42}};
+      return state || {count: 42};
   }
 };
 const myStore: Store<MyStore, MyAction> = createStore(myReducer);
 
-function useX(ignored: number): Box<number> {
-  const mySelector = (store: MyStore) => {
-    return store.count.value === ignored ? {value: -1} : {value: store.count.value};
-  };
-  const r = useSelector(mySelector, () => false);
-  console.log("emitting", r);
-  return r;
+const ALWAYS_TRUE = () => true;
+// This hook might look like it should be referentially stable.
+// The equalityFn is ALWAYS_TRUE, so no updates to MyStore will
+// ever trigger an update. But the selector itself is changing value,
+// so the hook keeps triggering re-renders.
+function useX(): Box<number> {
+  const stableSelector = useCallback((store: MyStore) => ({value: store.count}), []);
+  // const unstableSelector = (store: MyStore) => ({value: store.count});
+  return useSelector(stableSelector, ALWAYS_TRUE);
 }
 
 export default App;
