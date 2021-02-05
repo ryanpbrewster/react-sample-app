@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useState }  from 'react';
-import './App.css';
-import { Provider, useDispatch, useSelector } from 'react-redux';
-import { createStore, Store, Reducer } from 'redux';
+import React, { useCallback, useEffect, useState } from "react";
+import "./App.css";
+import { Provider, useDispatch, useSelector } from "react-redux";
+import { createStore, Store, Reducer } from "redux";
 
 const App: React.FC = () => {
   return (
@@ -20,11 +20,13 @@ const MyContent: React.FC = () => {
   const [, kick] = useState<{}>({});
   const r = useX();
   useEffect(() => kick({}), [r]);
-  return <div>
-    <p>{++RENDER_COUNT} renders</p>
-    <p>Store: {JSON.stringify(store)}</p>
-    <button onClick={() => dispatch({type: 'increment'})}>Increment</button>
-  </div>;
+  return (
+    <div>
+      <p>{++RENDER_COUNT} renders</p>
+      <p>Store: {JSON.stringify(store)}</p>
+      <button onClick={() => dispatch({ type: "increment" })}>Increment</button>
+    </div>
+  );
 };
 
 interface Box<T> {
@@ -34,15 +36,15 @@ interface MyStore {
   readonly count: number;
 }
 interface Increment {
-  readonly type: 'increment';
+  readonly type: "increment";
 }
 type MyAction = Increment;
 const myReducer: Reducer<MyStore, MyAction> = (state, action) => {
   switch (action.type) {
-    case 'increment':
-      return {...state, count: (state?.count || 0) + 1}
+    case "increment":
+      return { ...state, count: (state?.count || 0) + 1 };
     default:
-      return state || {count: 42};
+      return state || { count: 42 };
   }
 };
 const myStore: Store<MyStore, MyAction> = createStore(myReducer);
@@ -53,7 +55,10 @@ const ALWAYS_TRUE = () => true;
 // ever trigger an update. But the selector itself is changing value,
 // so the hook keeps triggering re-renders.
 function useX(): Box<number> {
-  const stableSelector = useCallback((store: MyStore) => ({value: store.count}), []);
+  const stableSelector = useCallback(
+    (store: MyStore) => ({ value: store.count }),
+    []
+  );
   // const unstableSelector = (store: MyStore) => ({value: store.count});
   return useSelector(stableSelector, ALWAYS_TRUE);
 }
